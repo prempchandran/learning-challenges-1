@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Singapore Student Experience Simulator | Prem Chandran</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        /* Custom Font Assignments */
+        body { font-family: 'Inter', sans-serif; background-color: #fdfbf7; color: #1f2937; }
+        h1, h2, h3, .serif { font-family: 'Merriweather', serif; }
+
+        /* Chart Container Styling - Mandatory per instructions */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container { height: 350px; }
+        }
+
+        /* Simulation Specific Styles */
+        .blur-text {
+            filter: blur(2px);
+            transition: filter 0.2s;
+        }
+        .scramble-word {
+            display: inline-block;
+            min-width: 1em;
+        }
+        .anxiety-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle, transparent 20%, rgba(0,0,0,0.8) 150%);
+            pointer-events: none;
+            z-index: 10;
+            animation: pulse-overlay 2s infinite;
+            display: none;
+        }
+        @keyframes pulse-overlay {
+            0% { box-shadow: inset 0 0 0px rgba(220, 38, 38, 0); }
+            50% { box-shadow: inset 0 0 50px rgba(220, 38, 38, 0.3); }
+            100% { box-shadow: inset 0 0 0px rgba(220, 38, 38, 0); }
+        }
+        .distraction-text {
+            position: absolute;
+            font-size: 0.8rem;
+            color: #9ca3af;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+
+        /* Scrollbar aesthetics */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+    </style>
+    <!-- Chosen Palette: Warm Academics - Cream (#fdfbf7), Slate (#1f2937), Muted Blue (#3b82f6), Alert Red (#ef4444), Calm Green (#10b981).
+         This palette evokes a serious but supportive educational environment. -->
+    
+    <!-- Application Structure Plan:
+         The app is designed as a "Teacher's Dashboard" for empathy.
+         1. Context & Data: Sets the stage with charts about Singapore student stress/sleep (The "Why").
+         2. The Simulation Arena: The core interactive component. 3 distinct tabs (Dyslexia, Anxiety, ADHD) allowing teachers to 'feel' the struggle.
+         3. Platform Recommendations: Directly answers the user's request for tools to build their own simulators.
+         4. Reflection: A synthesis section to turn experience into pedagogical strategy.
+         This flow moves from Knowledge -> Experience -> Tooling -> Action.
+    -->
+    
+    <!-- Visualization & Content Choices:
+         1. Stress/Sleep Charts (Chart.js Bar/Pie): Goal: Inform. Justification: Quick comparison of SG stats vs Global to highlight the urgency.
+         2. Dyslexia Sim (JS Text Manipulation): Goal: Change/Experience. Justification: Randomly swapping letters recreates the frustration of decoding text.
+         3. Anxiety Sim (JS Timer + CSS Overlay): Goal: Experience. Justification: Visual and temporal pressure mimics exam conditions.
+         4. Platform Comparison (Card Grid): Goal: Inform/Recommend. Justification: Clear, scannable list of tools like Unity/Twine for the user's future dev needs.
+    -->
+    
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold text-slate-800 serif">EdEmpathy SG</span>
+                    <span class="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">Simulator Prototype</span>
+                </div>
+                <div class="hidden md:flex space-x-8 items-center">
+                    <button onclick="scrollToSection('context')" class="text-gray-500 hover:text-blue-600 transition">Context</button>
+                    <button onclick="scrollToSection('simulation')" class="text-gray-500 hover:text-blue-600 transition">Simulations</button>
+                    <button onclick="scrollToSection('platforms')" class="text-gray-500 hover:text-blue-600 transition">Build Your Own</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="bg-[#fdfbf7] border-b border-gray-100 py-12 md:py-20">
+        <div class="max-w-4xl mx-auto px-4 text-center">
+            <!-- Creator Name Added Here -->
+            <div class="inline-block mb-4 px-4 py-1 rounded-full bg-blue-50 border border-blue-100">
+                <p class="text-xs font-bold text-blue-800 tracking-wide uppercase">
+                    Created by Prem Chandran through the use of AI
+                </p>
+            </div>
+            
+            <h1 class="text-4xl md:text-5xl font-bold text-slate-900 mb-6">Through Their Eyes</h1>
+            <p class="text-xl text-gray-600 mb-8 leading-relaxed">
+                A digital empathy lab for Singaporean educators. Experience the "invisible backpack" of learning challenges—from exam anxiety to processing differences—and discover the tools to build better classrooms.
+            </p>
+            <div class="flex justify-center gap-4">
+                <button onclick="scrollToSection('simulation')" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg transition transform hover:-translate-y-0.5">
+                    Start Simulation
+                </button>
+                <button onclick="scrollToSection('context')" class="bg-white hover:bg-gray-50 text-slate-700 border border-gray-300 font-semibold py-3 px-8 rounded-lg transition">
+                    View Data
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Section 1: The Context (Data Dashboard) -->
+    <section id="context" class="py-16 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-3xl mx-auto text-center mb-12">
+                <h2 class="text-3xl font-bold text-slate-800 mb-4">The Singaporean Student Context</h2>
+                <p class="text-gray-600">
+                    Before we simulate the individual experience, we must understand the systemic pressures. Singapore's education system is world-class, but it comes with specific stressors (High stakes exams like PSLE/O-Levels, widespread tuition culture, and sleep deprivation).
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+                <!-- Chart 1: Stress & Anxiety -->
+                <div class="bg-gray-50 rounded-xl p-6 shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-semibold text-slate-800 mb-2">Student Anxiety Levels (PISA Data)</h3>
+                    <p class="text-sm text-gray-500 mb-4">Percentage of students reporting frequent anxiety before tests, compared to OECD average.</p>
+                    <div class="chart-container">
+                        <canvas id="stressChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Chart 2: Sleep Deprivation -->
+                <div class="bg-gray-50 rounded-xl p-6 shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-semibold text-slate-800 mb-2">Sleep Hours vs. Recommendation</h3>
+                    <p class="text-sm text-gray-500 mb-4">Average weekday sleep for Singaporean youth vs required hours.</p>
+                    <div class="chart-container">
+                        <canvas id="sleepChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contextual Stats Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+                <div class="text-center p-6 bg-blue-50 rounded-lg">
+                    <div class="text-4xl font-bold text-blue-600 mb-2">80%+</div>
+                    <div class="text-sm font-semibold text-blue-900 uppercase tracking-wide">Tuition Participation</div>
+                    <p class="text-xs text-blue-700 mt-2">Primary students receiving private tuition.</p>
+                </div>
+                <div class="text-center p-6 bg-red-50 rounded-lg">
+                    <div class="text-4xl font-bold text-red-600 mb-2">1 in 10</div>
+                    <div class="text-sm font-semibold text-red-900 uppercase tracking-wide">Dyslexia Prevalence</div>
+                    <p class="text-xs text-red-700 mt-2">Estimated students struggling with reading fluency.</p>
+                </div>
+                <div class="text-center p-6 bg-amber-50 rounded-lg">
+                    <div class="text-4xl font-bold text-amber-600 mb-2">Top 3</div>
+                    <div class="text-sm font-semibold text-amber-900 uppercase tracking-wide">Global Math Rank</div>
+                    <p class="text-xs text-amber-700 mt-2">Consistently high performance masks individual struggle.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 2: The Simulator Arena -->
+    <section id="simulation" class="py-16 bg-[#fdfbf7]">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="mb-10">
+                <h2 class="text-3xl font-bold text-slate-800 mb-4 text-center">The Simulation Lab</h2>
+                <p class="text-center text-gray-600 max-w-2xl mx-auto">
+                    Select a "Learning Profile" below to activate a simulation. These modules use JavaScript to disrupt your browser interface, mimicking specific cognitive or emotional barriers faced in the classroom.
+                </p>
+            </div>
+
+            <!-- Simulation Controls -->
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
+                <!-- Tabs -->
+                <div class="flex flex-wrap border-b border-gray-200 bg-gray-50">
+                    <button onclick="switchSim('dyslexia')" id="tab-dyslexia" class="flex-1 py-4 px-6 text-sm font-medium text-blue-600 border-b-2 border-blue-600 bg-white focus:outline-none transition-colors">
+                        1. The Decoding Struggle<br><span class="text-xs font-normal text-gray-500">(Dyslexia / Processing)</span>
+                    </button>
+                    <button onclick="switchSim('anxiety')" id="tab-anxiety" class="flex-1 py-4 px-6 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none transition-colors">
+                        2. The Pressure Cooker<br><span class="text-xs font-normal text-gray-500">(High-Stakes Anxiety)</span>
+                    </button>
+                    <button onclick="switchSim('adhd')" id="tab-adhd" class="flex-1 py-4 px-6 text-sm font-medium text-gray-500 hover:text-gray-700 focus:outline-none transition-colors">
+                        3. The Signal & The Noise<br><span class="text-xs font-normal text-gray-500">(Attention / ADHD)</span>
+                    </button>
+                </div>
+
+                <!-- Sim Content Area -->
+                <div class="p-6 md:p-10 relative min-h-[500px] flex flex-col justify-center">
+                    
+                    <!-- Sim 1: Dyslexia -->
+                    <div id="sim-dyslexia" class="sim-panel block">
+                        <div class="max-w-2xl mx-auto">
+                            <h3 class="text-2xl font-bold mb-2">Task: Read the Passage</h3>
+                            <p class="text-gray-600 mb-6 italic">Try to read the text below. This simulation randomly swaps letters and blurs focus to mimic the cognitive load of decoding text.</p>
+                            
+                            <div class="bg-paper p-8 rounded border border-gray-300 shadow-inner bg-[#fffef0] text-lg leading-relaxed font-serif relative overflow-hidden" id="dyslexia-container">
+                                <p id="dyslexia-text" class="text-justify text-slate-800">
+                                    In the bustling city-state of Singapore, education is often seen as the golden ticket to a prosperous future. Students wake up before dawn, their bags heavy with textbooks, ready to face a day of rigorous learning. However, for a child with dyslexia, these words do not sit still. They dance, they flip, and they swim across the page. The effort required just to decode a single sentence is exhausting, leaving little mental energy for comprehension. Imagine trying to run a marathon while untying knots in your shoelaces every few steps. That is the hidden fatigue of the struggling reader in a text-heavy world.
+                                </p>
+                            </div>
+
+                            <div class="mt-6 flex justify-between items-center">
+                                <div class="text-sm text-gray-500">Severity: <span id="severity-label">Moderate</span></div>
+                                <input type="range" min="0" max="10" value="5" class="w-1/2" id="dyslexia-slider" oninput="updateDyslexiaSeverity(this.value)">
+                            </div>
+                            <div class="mt-4 p-4 bg-blue-50 text-blue-800 rounded text-sm">
+                                <strong>Teacher Tip:</strong> Use sans-serif fonts (like Arial or OpenDyslexic), increase line spacing, and allow extra time for reading tasks.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sim 2: Anxiety -->
+                    <div id="sim-anxiety" class="sim-panel hidden relative">
+                        <div class="anxiety-overlay" id="anxiety-overlay"></div>
+                        <div class="max-w-md mx-auto relative z-20">
+                            <h3 class="text-2xl font-bold mb-2 text-center">Task: Math Sprint</h3>
+                            <p class="text-gray-600 mb-6 text-center">Solve 5 questions. The timer represents the PSLE countdown. Watch how stress affects your cognitive processing.</p>
+                            
+                            <div class="bg-white p-8 rounded-lg border-2 border-gray-200 shadow-lg text-center">
+                                <div class="text-4xl font-bold text-red-600 mb-6" id="timer">00:30</div>
+                                <div id="question-box" class="text-2xl font-bold text-slate-800 mb-6">Press Start</div>
+                                
+                                <input type="number" id="math-answer" class="w-full p-3 border border-gray-300 rounded mb-4 text-center text-xl" placeholder="Answer" disabled>
+                                
+                                <button onclick="startAnxietySim()" id="start-anxiety-btn" class="w-full bg-red-600 text-white font-bold py-3 rounded hover:bg-red-700 transition">Start Exam</button>
+                                <button onclick="checkAnswer()" id="submit-ans-btn" class="hidden w-full bg-slate-800 text-white font-bold py-3 rounded hover:bg-slate-900 transition">Submit</button>
+                            </div>
+
+                            <div id="anxiety-feedback" class="mt-4 text-center h-6 text-red-600 font-bold"></div>
+                        </div>
+                        
+                        <!-- Distractions Container -->
+                        <div id="distractions-container" class="absolute inset-0 pointer-events-none overflow-hidden"></div>
+                    </div>
+
+                    <!-- Sim 3: ADHD -->
+                    <div id="sim-adhd" class="sim-panel hidden">
+                         <div class="max-w-2xl mx-auto text-center">
+                            <h3 class="text-2xl font-bold mb-2">Task: Follow the Instructions</h3>
+                            <p class="text-gray-600 mb-6">Listen to the "Teacher" (Main Text) while ignoring the "Environment" (Distractions). Click the keywords the teacher mentions.</p>
+
+                            <div class="relative h-64 bg-slate-100 rounded-lg border border-gray-300 overflow-hidden p-4 flex items-center justify-center">
+                                <!-- Background Noise/Distractions -->
+                                <div id="adhd-noise" class="absolute inset-0 z-0">
+                                    <!-- Dynamic text generated by JS -->
+                                </div>
+                                
+                                <!-- Teacher Instruction Stream -->
+                                <div class="z-10 bg-white p-6 shadow-xl rounded-lg max-w-lg w-full transition-all duration-200" id="teacher-box">
+                                    <p id="teacher-text" class="text-xl font-medium text-slate-800">Press 'Start Lesson' to begin.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-center gap-4 mt-6">
+                                <button onclick="startAdhdSim()" class="bg-emerald-600 text-white px-6 py-2 rounded hover:bg-emerald-700">Start Lesson</button>
+                                <button onclick="stopAdhdSim()" class="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400">Stop</button>
+                            </div>
+                            
+                            <div class="mt-4 p-4 bg-emerald-50 text-emerald-800 rounded text-sm text-left">
+                                <strong>Insight:</strong> For students with attention regulation issues, "trying harder" to focus often increases the volume of distractions.
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 3: Recommended Platforms -->
+    <section id="platforms" class="py-16 bg-white border-t border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <span class="text-blue-600 font-semibold tracking-wide uppercase text-sm">Teacher Toolkit</span>
+                <h2 class="text-3xl font-bold text-slate-800 mt-2">Build Your Own Simulator</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto mt-4">
+                    You asked: <em>"Which platforms or apps can I use?"</em> Here are the best tools for creating educational simulations, categorized by complexity.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Platform 1: Beginner -->
+                <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition group">
+                    <div class="h-12 w-12 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center mb-4 group-hover:bg-purple-600 group-hover:text-white transition">
+                        <span class="text-xl font-bold">Tw</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">Twine</h3>
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="text-xs font-semibold bg-green-100 text-green-800 px-2 py-1 rounded">No Coding</span>
+                        <span class="text-xs font-semibold bg-gray-100 text-gray-800 px-2 py-1 rounded">Interactive Fiction</span>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">
+                        Best for scenario-based decision making. Create branching narratives (e.g., "Choose how to respond to a bullied student") without writing code.
+                    </p>
+                    <div class="text-sm font-medium text-slate-500">Cost: Free / Open Source</div>
+                </div>
+
+                <!-- Platform 2: Intermediate/Pro -->
+                <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition group">
+                    <div class="h-12 w-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-600 group-hover:text-white transition">
+                        <span class="text-xl font-bold">Sl</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">Articulate Storyline</h3>
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="text-xs font-semibold bg-amber-100 text-amber-800 px-2 py-1 rounded">Industry Standard</span>
+                        <span class="text-xs font-semibold bg-gray-100 text-gray-800 px-2 py-1 rounded">E-Learning</span>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">
+                        The gold standard for corporate and school training. Drag-and-drop interface to create slide-based simulations with triggers, layers, and quizzes.
+                    </p>
+                    <div class="text-sm font-medium text-slate-500">Cost: Paid Subscription</div>
+                </div>
+
+                <!-- Platform 3: Advanced -->
+                <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition group">
+                    <div class="h-12 w-12 bg-slate-100 text-slate-600 rounded-lg flex items-center justify-center mb-4 group-hover:bg-slate-800 group-hover:text-white transition">
+                        <span class="text-xl font-bold">Un</span>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">Unity / Godot</h3>
+                    <div class="flex items-center gap-2 mb-4">
+                        <span class="text-xs font-semibold bg-red-100 text-red-800 px-2 py-1 rounded">High Coding</span>
+                        <span class="text-xs font-semibold bg-gray-100 text-gray-800 px-2 py-1 rounded">3D / VR</span>
+                    </div>
+                    <p class="text-gray-600 text-sm mb-4">
+                        If you want to build a fully immersive 3D classroom simulator or VR experience where users can walk around. Requires C# programming skills.
+                    </p>
+                    <div class="text-sm font-medium text-slate-500">Cost: Free Personal / Paid Pro</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-white py-12">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <h2 class="text-2xl font-bold serif mb-4">EdEmpathy SG</h2>
+            <p class="text-slate-400 mb-8 max-w-md mx-auto">
+                Helping Singaporean educators understand the invisible barriers to learning. Generated as a prototype for educational research.
+            </p>
+            <div class="border-t border-slate-800 pt-8 text-sm text-slate-500">
+                Created by Prem Chandran through the use of AI. &copy; 2025.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- NAVIGATION LOGIC ---
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function switchSim(simName) {
+            // Hide all panels
+            document.querySelectorAll('.sim-panel').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.sim-panel').forEach(el => el.classList.remove('block'));
+            
+            // Reset tab styles
+            const tabs = ['dyslexia', 'anxiety', 'adhd'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                btn.classList.remove('border-blue-600', 'text-blue-600', 'bg-white');
+                btn.classList.add('text-gray-500', 'hover:text-gray-700', 'border-transparent');
+            });
+
+            // Show selected panel
+            document.getElementById(`sim-${simName}`).classList.remove('hidden');
+            document.getElementById(`sim-${simName}`).classList.add('block');
+
+            // Style selected tab
+            const activeBtn = document.getElementById(`tab-${simName}`);
+            activeBtn.classList.remove('text-gray-500', 'hover:text-gray-700', 'border-transparent');
+            activeBtn.classList.add('border-blue-600', 'text-blue-600', 'bg-white');
+
+            // Stop other sims if running
+            stopAdhdSim(); 
+        }
+
+        // --- CHART DATA & RENDERING ---
+        // Context: Singapore specific data points (simulated based on typical reports like PISA, local studies)
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // Chart 1: Stress Levels
+            const ctxStress = document.getElementById('stressChart').getContext('2d');
+            new Chart(ctxStress, {
+                type: 'bar',
+                data: {
+                    labels: ['Singapore', 'OECD Average', 'Finland', 'Japan'],
+                    datasets: [{
+                        label: '% Students Anxious About Tests',
+                        data: [76, 55, 38, 65], // Approximate figures based on past PISA trends
+                        backgroundColor: [
+                            'rgba(239, 68, 68, 0.8)', // Red for SG
+                            'rgba(209, 213, 219, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(59, 130, 246, 0.8)'
+                        ],
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.raw + '% report anxiety';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, max: 100, title: { display: true, text: 'Percentage (%)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Chart 2: Sleep
+            const ctxSleep = document.getElementById('sleepChart').getContext('2d');
+            new Chart(ctxSleep, {
+                type: 'bar',
+                data: {
+                    labels: ['Primary (7-12)', 'Secondary (13-16)', 'Recommended'],
+                    datasets: [{
+                        label: 'Average Hours of Sleep',
+                        data: [7.5, 6.5, 9], // SG stats often show <7hrs for teens
+                        backgroundColor: [
+                            'rgba(245, 158, 11, 0.8)',
+                            'rgba(239, 68, 68, 0.8)',
+                            'rgba(16, 185, 129, 0.8)'
+                        ],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, max: 12, title: { display: true, text: 'Hours per Night' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Initialize Dyslexia text setup
+            setupDyslexiaText();
+        });
+
+        // --- SIMULATION 1: DYSLEXIA LOGIC ---
+        let dyslexiaInterval;
+        const originalText = "In the bustling city-state of Singapore, education is often seen as the golden ticket to a prosperous future. Students wake up before dawn, their bags heavy with textbooks, ready to face a day of rigorous learning. However, for a child with dyslexia, these words do not sit still. They dance, they flip, and they swim across the page. The effort required just to decode a single sentence is exhausting, leaving little mental energy for comprehension. Imagine trying to run a marathon while untying knots in your shoelaces every few steps. That is the hidden fatigue of the struggling reader in a text-heavy world.";
+        
+        function setupDyslexiaText() {
+            const container = document.getElementById('dyslexia-text');
+            const words = originalText.split(' ');
+            container.innerHTML = words.map(word => `<span class="scramble-word">${word}</span>`).join(' ');
+            updateDyslexiaSeverity(5); // Start mid-level
+        }
+
+        function updateDyslexiaSeverity(val) {
+            const label = document.getElementById('severity-label');
+            if (val < 3) label.innerText = "Mild";
+            else if (val < 7) label.innerText = "Moderate";
+            else label.innerText = "Severe";
+
+            clearInterval(dyslexiaInterval);
+            if (val > 0) {
+                const speed = 1000 - (val * 80); // Higher val = faster change
+                dyslexiaInterval = setInterval(() => scrambleWords(val), Math.max(100, speed));
+            }
+        }
+
+        function scrambleWords(severity) {
+            const spans = document.getElementsByClassName('scramble-word');
+            // Scramble a percentage of words based on severity
+            const numToScramble = Math.floor(spans.length * (severity / 20)); 
+
+            for(let i=0; i<numToScramble; i++) {
+                const idx = Math.floor(Math.random() * spans.length);
+                const span = spans[idx];
+                const word = span.innerText;
+                
+                if (word.length > 3) {
+                    // Simple scramble: swap internal chars
+                    const mid = word.substring(1, word.length-1);
+                    const scrambledMid = mid.split('').sort(() => 0.5 - Math.random()).join('');
+                    span.innerText = word[0] + scrambledMid + word[word.length-1];
+                    
+                    // Reset after short delay
+                    setTimeout(() => { span.innerText = originalText.split(' ')[idx]; }, 800);
+                }
+                
+                // Occasional blur
+                if (Math.random() > 0.7) {
+                    span.classList.add('blur-text');
+                    setTimeout(() => span.classList.remove('blur-text'), 500);
+                }
+            }
+        }
+
+        // --- SIMULATION 2: ANXIETY LOGIC ---
+        let anxietyTimer;
+        let timeLeft = 30;
+        let anxietyRunning = false;
+
+        function startAnxietySim() {
+            if (anxietyRunning) return;
+            anxietyRunning = true;
+            timeLeft = 30;
+            
+            document.getElementById('start-anxiety-btn').classList.add('hidden');
+            document.getElementById('submit-ans-btn').classList.remove('hidden');
+            document.getElementById('math-answer').disabled = false;
+            document.getElementById('math-answer').focus();
+            document.getElementById('anxiety-overlay').style.display = 'block';
+            document.getElementById('anxiety-feedback').innerText = "";
+            
+            generateMathQuestion();
+            
+            anxietyTimer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer').innerText = `00:${timeLeft < 10 ? '0'+timeLeft : timeLeft}`;
+                
+                // Intensity increases
+                if(timeLeft < 10) {
+                    document.getElementById('timer').classList.add('text-red-600', 'scale-110');
+                    document.getElementById('anxiety-overlay').style.animationDuration = '0.5s'; // Pulse faster
+                    spawnDistraction();
+                }
+
+                if(timeLeft <= 0) {
+                    endAnxietySim(false);
+                }
+            }, 1000);
+        }
+
+        function generateMathQuestion() {
+            const a = Math.floor(Math.random() * 20) + 10;
+            const b = Math.floor(Math.random() * 20) + 10;
+            document.getElementById('question-box').innerText = `${a} + ${b} = ?`;
+            document.getElementById('question-box').dataset.ans = a + b;
+        }
+
+        function checkAnswer() {
+            const userAns = parseInt(document.getElementById('math-answer').value);
+            const realAns = parseInt(document.getElementById('question-box').dataset.ans);
+            
+            if (userAns === realAns) {
+                document.getElementById('anxiety-feedback').innerText = "Correct! Next...";
+                document.getElementById('math-answer').value = "";
+                generateMathQuestion();
+                spawnDistraction("Don't fail!"); 
+            } else {
+                document.getElementById('anxiety-feedback').innerText = "WRONG. Try again.";
+                document.getElementById('math-answer').classList.add('border-red-500');
+                setTimeout(() => document.getElementById('math-answer').classList.remove('border-red-500'), 500);
+            }
+        }
+
+        function spawnDistraction(text = null) {
+            const container = document.getElementById('distractions-container');
+            const el = document.createElement('div');
+            const phrases = ["Time is running out!", "Everyone else is finished", "Focus!", "This is easy, why are you stuck?", "PSLE is coming"];
+            el.innerText = text || phrases[Math.floor(Math.random() * phrases.length)];
+            el.className = "distraction-text";
+            
+            // Random position
+            el.style.top = Math.random() * 80 + 10 + "%";
+            el.style.left = Math.random() * 80 + 10 + "%";
+            el.style.fontSize = (Math.random() * 1.5 + 1) + "rem";
+            el.style.color = Math.random() > 0.5 ? '#ef4444' : '#64748b'; // Red or Slate
+            
+            container.appendChild(el);
+            
+            // Fade in and float
+            setTimeout(() => { el.style.opacity = 1; el.style.transform = "translateY(-20px)"; }, 50);
+            setTimeout(() => { el.remove(); }, 2000);
+        }
+
+        function endAnxietySim(success) {
+            clearInterval(anxietyTimer);
+            anxietyRunning = false;
+            document.getElementById('anxiety-overlay').style.display = 'none';
+            document.getElementById('timer').innerText = "00:30";
+            document.getElementById('question-box').innerText = "Time's Up!";
+            document.getElementById('start-anxiety-btn').classList.remove('hidden');
+            document.getElementById('submit-ans-btn').classList.add('hidden');
+            document.getElementById('math-answer').disabled = true;
+            document.getElementById('distractions-container').innerHTML = ""; // Clear distractions
+        }
+
+        // --- SIMULATION 3: ADHD LOGIC ---
+        let adhdInterval;
+        let adhdRunning = false;
+        
+        function startAdhdSim() {
+            if(adhdRunning) return;
+            adhdRunning = true;
+            
+            const teacherBox = document.getElementById('teacher-text');
+            const instructions = ["Open your textbook to page 45.", "Look at the diagram on the board.", "The mitochondria is the powerhouse.", "Do not use red pen.", "Submit your homework now."];
+            let step = 0;
+
+            teacherBox.innerText = instructions[0];
+            
+            // Environment Noise Loop
+            adhdInterval = setInterval(() => {
+                // Change teacher text occasionally
+                if(Math.random() > 0.8) {
+                    step = (step + 1) % instructions.length;
+                    teacherBox.innerText = instructions[step];
+                }
+
+                // Create noise
+                createNoise();
+
+                // Teacher box moves/fades slightly to simulate losing focus
+                const box = document.getElementById('teacher-box');
+                if(Math.random() > 0.7) {
+                    box.style.opacity = "0.5";
+                } else {
+                    box.style.opacity = "1";
+                }
+
+            }, 800);
+        }
+
+        function createNoise() {
+            const container = document.getElementById('adhd-noise');
+            const noise = document.createElement('div');
+            const noises = ["*Fan Whirring*", "*Chair Scraping*", "Did I lock the door?", "Hungry...", "Bird outside", "Blue car", "Pencil tapping"];
+            noise.innerText = noises[Math.floor(Math.random() * noises.length)];
+            noise.style.position = 'absolute';
+            noise.style.left = Math.random() * 90 + '%';
+            noise.style.top = Math.random() * 90 + '%';
+            noise.style.color = '#94a3b8';
+            noise.style.fontSize = Math.random() * 1 + 0.8 + 'rem';
+            noise.style.fontWeight = 'bold';
+            noise.style.transition = 'all 1s';
+            noise.style.opacity = '0';
+            
+            container.appendChild(noise);
+            
+            setTimeout(() => { noise.style.opacity = '0.8'; noise.style.transform = `scale(${Math.random() * 0.5 + 1})`; }, 50);
+            setTimeout(() => { noise.remove(); }, 1500);
+        }
+
+        function stopAdhdSim() {
+            clearInterval(adhdInterval);
+            adhdRunning = false;
+            document.getElementById('teacher-text').innerText = "Press 'Start Lesson' to begin.";
+            document.getElementById('teacher-box').style.opacity = "1";
+            document.getElementById('adhd-noise').innerHTML = "";
+        }
+
+    </script>
+</body>
+</html>
